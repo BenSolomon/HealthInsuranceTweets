@@ -88,16 +88,26 @@ tweets <- tweets[relPrediction == 1, ]
 tweetsModel <- read.csv("testTweets.csv", stringsAsFactors = F)
 tweetsModel <- subset(tweetsModel, !is.na(tweetsModel$trueSentiment))
 
+#Downsampling b/c of class imbalance
+set.seed(1)
+tweetsModel <- rbind(subset(tweetsModel, trueSentiment == 1),
+                     subset(tweetsModel, trueSentiment == 0)[sample(1:nrow(subset(tweetsModel, trueSentiment == 0)), nrow(subset(tweetsModel, trueSentiment == 1))),]
+)
+
+
 #Tokenizing
 tweetsWords <- tweetsModel %>%
-  unnest_tokens(word, text) %>% 
+  unnest_tokens(word, text) %>%
   anti_join(stop_words)
 tweetsWords <- tweetsWords %>% 
   count(id, word) %>%
+  # bind_tf_idf(word, id, n) %>%
+  # filter(word != "id" & tf_idf > 0) %>%
   filter(word != "id") %>%
   mutate(word = make.names(word))
 modelWords <- data.frame(word = tweetsWords$word, stringsAsFactors = F)
 tweetsWords <- tweetsWords %>%
+  # select(-tf, -idf, -tf_idf) %>%
   spread(word, n, fill = 0) 
 tweetsSent <- tweetsModel %>% 
   select(id, trueSentiment) %>%
@@ -105,6 +115,7 @@ tweetsSent <- tweetsModel %>%
 tweetsSent <- tweetsSent[,-1]
 
 #Building model
+set.seed(1)
 training.size <- 0.7
 train.index <- sample(1:nrow(tweetsSent), round(training.size*nrow(tweetsSent), 0))
 test.index <- setdiff(1:nrow(tweetsSent), train.index)
@@ -115,8 +126,8 @@ varImpPlot(sentForest)
 sentPrediction <- predict(sentForest, test)
 sentPred <- prediction(as.numeric(as.character(sentPrediction)), test$trueSentiment)
 sentPerf <- performance(sentPred,"tpr","fpr")
-plot(sentPerf)
-performance(sentPred, measure = "auc")@y.values
+auc <- performance(sentPred, measure = "auc")@y.values[[1]]
+plot(sentPerf, main = paste("Downsampled sentiment classifier, auc =", round(auc, 5)))
 
 
 ###Applying relevance classification model###
@@ -181,7 +192,7 @@ write.csv(summary, "summary.csv", row.names = F)
 #http://www.cigna.com/about-us/company-profile/cigna-fact-sheet
 #http://www.bcbs.com/about-the-association/?referrer=https://www.google.com/
 
-summary <- read.csv("summary.csv")
+# summary <- read.csv("summary.csv")
 enrolled <- read.csv("memberNumbers.csv", skip = 1)
 enrolled <- enrolled[,-6]
 enrolled <- enrolled %>% gather(key = year, value = members)
@@ -207,8 +218,8 @@ summary %>%
 library(wordcloud)
 tweetsSplit <- split(tweetsWords, paste0(tweets$org, tweets$predSentiment))
 cloudList <- function(x){
-  orgs <- c("kaiserpermanente", "aetna", "cigna", "bluecrossblueshield")
-  d <- x %>% gather(word, rate, -id) %>% group_by(word) %>% summarise(freq = sum(rate)) %>% filter(!(word %in% orgs))
+  exclude <- c("kaiserpermanente", "aetna", "cigna", "bluecrossblueshield", "healthcare", "insurance", "health", "kaiser", "company", "medical")
+  d <- x %>% gather(word, rate, -id) %>% group_by(word) %>% summarise(freq = sum(rate)) %>% filter(!(word %in% exclude))
   d
 }
 tweetsCloud <- lapply(tweetsSplit, cloudList)

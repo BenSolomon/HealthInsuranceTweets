@@ -20,3 +20,7 @@
 [Negative tweet wordcloud for Kaiser Permanente](https://github.com/BenSolomon/HealthInsuranceTweets/blob/master/Kaiser%20negative%20word%20cloud.jpeg)
 
 [Negative tweet wordcloud for Aetna](https://github.com/BenSolomon/HealthInsuranceTweets/blob/master/Aetna%20negative%20cloud.jpeg)
+
+[Basic sentiment classifier ROC curve](https://github.com/BenSolomon/HealthInsuranceTweets/blob/master/Original%20sentiment%20classifier%20ROC.jpeg)
+
+[Downsampled sentiment classifier ROC curve](https://github.com/BenSolomon/HealthInsuranceTweets/blob/master/Downsampled%20sentiment%20classifier%20ROC.jpeg)
